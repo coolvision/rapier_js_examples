@@ -48,7 +48,9 @@ async function init() {
     pointer_target.position.set(0, 0.5, 0);
     pointer_target.rotateX(-Math.PI/2);
 
-    let size = 0.5
+    let width = 0.01
+    let height = 0.2
+    let depth = 0.01
     let p = new THREE.Vector3(0, 1, 0);
     let color = new THREE.Color();
     color.setHex(0xffffff * Math.random());
@@ -58,12 +60,12 @@ async function init() {
 
     let rigid_body = world.createRigidBody(body_desc);
 
-    let geometry = new THREE.BoxGeometry(size, size, size);
+    let geometry = new THREE.BoxGeometry(width, height, depth);
     let mesh = new THREE.Mesh(geometry, new THREE.MeshLambertMaterial({color: color}));
 
-    // let collider_desc = RAPIER.ColliderDesc.cuboid(size/2, size/2, size/2);
-    // let collider_desc = RAPIER.ColliderDesc.convexHull(mesh.geometry.attributes.position.array, mesh.geometry.index.array);
-    let collider_desc = RAPIER.ColliderDesc.convexMesh(mesh.geometry.attributes.position.array, mesh.geometry.index.array);
+    // let collider_desc = RAPIER.ColliderDesc.cuboid(width/2, height/2, depth/2);
+    let collider_desc = RAPIER.ColliderDesc.convexHull(mesh.geometry.attributes.position.array);
+    // let collider_desc = RAPIER.ColliderDesc.convexMesh(mesh.geometry.attributes.position.array, mesh.geometry.index.array);
 
     scene.add(mesh);
 
