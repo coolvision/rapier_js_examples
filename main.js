@@ -45,42 +45,65 @@ async function init() {
 
 	scene.add(transform_ctrl);
 
-    pointer_target.position.set(0, 0.5, 0);
+    pointer_target.position.set(0, 0.75, 0);
     pointer_target.rotateX(-Math.PI/2);
 
-    let width = 0.01
-    let height = 0.2
-    let depth = 0.01
-    let p = new THREE.Vector3(0, 1, 0);
+    let width = 0.1
+    let height = 0.5
+    let depth = 0.1
     let color = new THREE.Color();
+
+
     color.setHex(0xffffff * Math.random());
 
-    let body_desc = RAPIER.RigidBodyDesc.dynamic().setTranslation(p.x, p.y, p.z);
+    let body_desc = RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(0, 1, 0);
+    // let body_desc = RAPIER.RigidBodyDesc.dynamic().setTranslation(0, 1, 0);
     body_desc.setCanSleep(false);
-
     let rigid_body = world.createRigidBody(body_desc);
-
     let geometry = new THREE.BoxGeometry(width, height, depth);
     let mesh = new THREE.Mesh(geometry, new THREE.MeshLambertMaterial({color: color}));
-
-    // let collider_desc = RAPIER.ColliderDesc.cuboid(width/2, height/2, depth/2);
-    let collider_desc = RAPIER.ColliderDesc.convexHull(mesh.geometry.attributes.position.array);
-    // let collider_desc = RAPIER.ColliderDesc.convexMesh(mesh.geometry.attributes.position.array, mesh.geometry.index.array);
-
     scene.add(mesh);
-
-    let collider = world.createCollider(collider_desc, rigid_body);
-
+    let collider = world.createCollider(RAPIER.ColliderDesc.cuboid(width/2, height/2, depth/2), rigid_body);
     boxes.push({
         r: rigid_body,
         c: collider,
         m: mesh
     });
 
+
+    color.setHex(0xffffff * Math.random());
+    body_desc = RAPIER.RigidBodyDesc.dynamic().setTranslation(0.05, 1, 0);
+    body_desc.setCanSleep(false);
+    rigid_body = world.createRigidBody(body_desc);
+    geometry = new THREE.BoxGeometry(width, height, depth);
+    mesh = new THREE.Mesh(geometry, new THREE.MeshLambertMaterial({color: color}));
+    scene.add(mesh);
+    collider = world.createCollider(RAPIER.ColliderDesc.cuboid(width/2, height/2, depth/2), rigid_body);
+    boxes.push({
+        r: rigid_body,
+        c: collider,
+        m: mesh
+    });
+
+    // let joint = world.createMultibodyJoint(RAPIER.JointData.revolute(
+    //     {x: 0.12, y: 0.25, z: 0}, {x: 0, y: 0.25, z: 0}, {x: 1, y: 1, z: 0}), boxes[0].r, boxes[1].r, true);
+    // joint.setContactsEnabled(false);
+
+    let joint = world.createMultibodyJoint(RAPIER.JointData.revolute(
+        {x: 0.12, y: 0.25, z: 0}, {x: 0, y: 0.25, z: 0}, {x: 1, y: 0, z: 0}), boxes[0].r, boxes[1].r, true);
+    joint.setContactsEnabled(false);
+
     renderer.setAnimationLoop(render);
 }
 
 function render() {
+
+    if (boxes.length > 0) {
+        let p = pointer_target.position;
+        boxes[0].r.setNextKinematicTranslation({x: p.x, y: p.y, z: p.z}, true);
+        let q = pointer_target.quaternion;
+        boxes[0].r.setNextKinematicRotation({w: q.w, x: q.x, y: q.y, z: q.z}, true);
+    }
 
     for (let i = 0; i < boxes.length; i++) {
         let p = boxes[i].r.translation();
