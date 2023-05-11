@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 // import RAPIER from 'https://cdn.skypack.dev/@dimforge/rapier3d-compat';
 import RAPIER from './lib/rapier.es';
+import Stats from './lib/stats.module';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
 
@@ -16,6 +17,23 @@ let world;
 let eventQueue;
 let ground_collider;
 let boxes = [];
+
+var stats = new Stats();
+stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
+document.body.appendChild( stats.dom );
+
+let clock = new THREE.Clock();
+let delta = 0;
+let interval = 1 / 30; // 30 fps
+function update() {
+    requestAnimationFrame(update);
+    delta += clock.getDelta();
+    if (delta  > interval) {
+       // The draw or time dependent code are here
+       render();
+       delta = delta % interval;
+    }
+}
 
 await init();
 async function init() {
@@ -40,7 +58,7 @@ async function init() {
     let color = new THREE.Color();
     color.setHex(0xffffff * Math.random());
 
-    let body_desc = RAPIER.RigidBodyDesc.dynamic();
+    let body_desc = RAPIER.RigidBodyDesc.fixed().setTranslation(0, 10, 0);
     let rigid_body = world.createRigidBody(body_desc);
     let geometry = new THREE.BoxGeometry(2.0*2, 6.0*2, 0.5*2);
     let mesh = new THREE.Mesh(geometry, new THREE.MeshLambertMaterial({color: color}));
@@ -65,23 +83,24 @@ async function init() {
     });
 
 
-    // let joint = world.createMultibodyJoint(RAPIER.JointData.revolute(
-    //     {x: 0.12, y: 0, z: 0}, {x: 0, y: 0, z: 0}, {x: 1, y: 0, z: 0}), boxes[0].r, boxes[1].r, true);
+    // let joint = world.createImpulseJoint(RAPIER.JointData.revolute(
+    //     {x: 0, y: 0, z: 0}, {x: 0, y: 2, z: -3}, {x: 0, y: 0, z: 1}), boxes[0].r, boxes[1].r, true);
 
-    let joint = world.createImpulseJoint(RAPIER.JointData.revolute(
+    let joint = world.createMultibodyJoint(RAPIER.JointData.revolute(
         {x: 0, y: 0, z: 0}, {x: 0, y: 2, z: -3}, {x: 0, y: 0, z: 1}), boxes[0].r, boxes[1].r, true);
 
-    joint.setContactsEnabled(false);
-    joint.configureMotorVelocity(-2.0, 1000.0);
+    // joint.setContactsEnabled(false);
+    joint.configureMotorVelocity(6.28, 1000.0);
 
 
     // console.log("joint", joint)
 
     renderer.setAnimationLoop(render);
+    // update();
 }
 
 function render() {
-
+    stats.begin();
     // if (boxes.length > 0) {
     //     let p = pointer_target.position;
     //     boxes[0].r.setNextKinematicTranslation({x: p.x, y: p.y, z: p.z}, true);
@@ -96,9 +115,11 @@ function render() {
         boxes[i].m.quaternion.set(q.x, q.y, q.z, q.w);
     }
 
-    // world.step(eventQueue);
+    world.step(eventQueue);
 
     renderer.render(scene, camera);
+
+    stats.end();
 }
 
 function scene_setup() {
