@@ -1,7 +1,7 @@
 
 import * as THREE from 'three';
-import RAPIER from 'https://cdn.skypack.dev/@dimforge/rapier3d-compat';
-
+// import RAPIER from 'https://cdn.skypack.dev/@dimforge/rapier3d-compat';
+import RAPIER from './lib/rapier.es';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
 
@@ -48,16 +48,16 @@ async function init() {
     pointer_target.position.set(0, 0.75, 0);
     pointer_target.rotateX(-Math.PI/2);
 
-    let width = 0.1
-    let height = 0.5
-    let depth = 0.1
+    let width = 0.2
+    let height = 0.2
+    let depth = 0.2
     let color = new THREE.Color();
 
 
     color.setHex(0xffffff * Math.random());
 
-    let body_desc = RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(0, 1, 0);
-    // let body_desc = RAPIER.RigidBodyDesc.dynamic().setTranslation(0, 1, 0);
+    // let body_desc = RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(0, 1, 0);
+    let body_desc = RAPIER.RigidBodyDesc.dynamic().setTranslation(0, 1, 0);
     body_desc.setCanSleep(false);
     let rigid_body = world.createRigidBody(body_desc);
     let geometry = new THREE.BoxGeometry(width, height, depth);
@@ -70,7 +70,9 @@ async function init() {
         m: mesh
     });
 
-
+    width = 0.1
+    height = 0.5
+    depth = 0.1
     color.setHex(0xffffff * Math.random());
     body_desc = RAPIER.RigidBodyDesc.dynamic().setTranslation(0.05, 1, 0);
     body_desc.setCanSleep(false);
@@ -85,13 +87,17 @@ async function init() {
         m: mesh
     });
 
-    // let joint = world.createMultibodyJoint(RAPIER.JointData.revolute(
-    //     {x: 0.12, y: 0.25, z: 0}, {x: 0, y: 0.25, z: 0}, {x: 1, y: 1, z: 0}), boxes[0].r, boxes[1].r, true);
-    // joint.setContactsEnabled(false);
-
     let joint = world.createMultibodyJoint(RAPIER.JointData.revolute(
-        {x: 0.12, y: 0.25, z: 0}, {x: 0, y: 0.25, z: 0}, {x: 1, y: 0, z: 0}), boxes[0].r, boxes[1].r, true);
+        {x: 0.12, y: 0, z: 0}, {x: 0, y: 0, z: 0}, {x: 1, y: 0, z: 0}), boxes[0].r, boxes[1].r, true);
+
+    // let joint = world.createImpulseJoint(RAPIER.JointData.revolute(
+    //     {x: 0.12, y: 0, z: 0}, {x: 0, y: 0, z: 0}, {x: 1, y: 0, z: 0}), boxes[0].r, boxes[1].r, true);
+
     joint.setContactsEnabled(false);
+    joint.configureMotorVelocity(-2.0, 1000.0);
+
+
+    // console.log("joint", joint)
 
     renderer.setAnimationLoop(render);
 }
