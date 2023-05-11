@@ -26,72 +26,50 @@ async function init() {
     let gravity = {x: 0.0, y: -9.81, z: 0.0};
     world = new RAPIER.World(gravity);
     eventQueue = new RAPIER.EventQueue(true);
+    let ip = world.integrationParameters;
+    ip.erp = 0.8;
 
-    let groundColliderDesc = RAPIER.ColliderDesc.cuboid(10.0, 1, 10.0);
-    groundColliderDesc.setTranslation(0, -1, 0);
-    ground_collider = world.createCollider(groundColliderDesc);
-    ground_collider.ignore_controller = true;
+    let ground_size = 200.1;
+    let ground_height = 0.1;
+    // let ground_desc = RAPIER.RigidBodyDesc.fixed().setTranslation(0, -10, 0);
+    let ground_desc = RAPIER.RigidBodyDesc.fixed().setTranslation(0, -ground_height, 0);
+    let ground_body = world.createRigidBody(ground_desc);
+    let ground_collider_desc = RAPIER.ColliderDesc.cuboid(ground_size, ground_height, ground_size);
+    ground_collider = world.createCollider(ground_collider_desc, ground_body);
 
-    scene.add(pointer_target);
-
-	transform_ctrl = new TransformControls(camera, renderer.domElement);
-	transform_ctrl.addEventListener('change', render);
-	transform_ctrl.addEventListener('dragging-changed', function (event) {
-     	controls.enabled = ! event.value;
-	});
-	transform_ctrl.size = 0.75
-	transform_ctrl.setSpace("local");
-	transform_ctrl.attach(pointer_target);
-
-	scene.add(transform_ctrl);
-
-    pointer_target.position.set(0, 0.75, 0);
-    pointer_target.rotateX(-Math.PI/2);
-
-    let width = 0.2
-    let height = 0.2
-    let depth = 0.2
     let color = new THREE.Color();
-
-
     color.setHex(0xffffff * Math.random());
 
-    // let body_desc = RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(0, 1, 0);
-    let body_desc = RAPIER.RigidBodyDesc.dynamic().setTranslation(0, 1, 0);
-    body_desc.setCanSleep(false);
+    let body_desc = RAPIER.RigidBodyDesc.dynamic();
     let rigid_body = world.createRigidBody(body_desc);
-    let geometry = new THREE.BoxGeometry(width, height, depth);
+    let geometry = new THREE.BoxGeometry(2.0*2, 6.0*2, 0.5*2);
     let mesh = new THREE.Mesh(geometry, new THREE.MeshLambertMaterial({color: color}));
     scene.add(mesh);
-    let collider = world.createCollider(RAPIER.ColliderDesc.cuboid(width/2, height/2, depth/2), rigid_body);
+    let collider = world.createCollider(RAPIER.ColliderDesc.cuboid(2.0, 6.0, 0.5), rigid_body);
     boxes.push({
         r: rigid_body,
         c: collider,
         m: mesh
     });
 
-    width = 0.1
-    height = 0.5
-    depth = 0.1
-    color.setHex(0xffffff * Math.random());
-    body_desc = RAPIER.RigidBodyDesc.dynamic().setTranslation(0.05, 1, 0);
-    body_desc.setCanSleep(false);
-    rigid_body = world.createRigidBody(body_desc);
-    geometry = new THREE.BoxGeometry(width, height, depth);
-    mesh = new THREE.Mesh(geometry, new THREE.MeshLambertMaterial({color: color}));
-    scene.add(mesh);
-    collider = world.createCollider(RAPIER.ColliderDesc.cuboid(width/2, height/2, depth/2), rigid_body);
+    let body_desc2 = RAPIER.RigidBodyDesc.dynamic();
+    let rigid_body2 = world.createRigidBody(body_desc2);
+    let geometry2 = new THREE.BoxGeometry(2.0*2, 6.0*2, 0.5*2);
+    let mesh2 = new THREE.Mesh(geometry2, new THREE.MeshLambertMaterial({color: color}));
+    scene.add(mesh2);
+    let collider2 = world.createCollider(RAPIER.ColliderDesc.cuboid(2.0, 6.0, 0.5), rigid_body2);
     boxes.push({
-        r: rigid_body,
-        c: collider,
-        m: mesh
+        r: rigid_body2,
+        c: collider2,
+        m: mesh2
     });
 
-    let joint = world.createMultibodyJoint(RAPIER.JointData.revolute(
-        {x: 0.12, y: 0, z: 0}, {x: 0, y: 0, z: 0}, {x: 1, y: 0, z: 0}), boxes[0].r, boxes[1].r, true);
 
-    // let joint = world.createImpulseJoint(RAPIER.JointData.revolute(
+    // let joint = world.createMultibodyJoint(RAPIER.JointData.revolute(
     //     {x: 0.12, y: 0, z: 0}, {x: 0, y: 0, z: 0}, {x: 1, y: 0, z: 0}), boxes[0].r, boxes[1].r, true);
+
+    let joint = world.createImpulseJoint(RAPIER.JointData.revolute(
+        {x: 0, y: 0, z: 0}, {x: 0, y: 2, z: -3}, {x: 0, y: 0, z: 1}), boxes[0].r, boxes[1].r, true);
 
     joint.setContactsEnabled(false);
     joint.configureMotorVelocity(-2.0, 1000.0);
@@ -104,12 +82,12 @@ async function init() {
 
 function render() {
 
-    if (boxes.length > 0) {
-        let p = pointer_target.position;
-        boxes[0].r.setNextKinematicTranslation({x: p.x, y: p.y, z: p.z}, true);
-        let q = pointer_target.quaternion;
-        boxes[0].r.setNextKinematicRotation({w: q.w, x: q.x, y: q.y, z: q.z}, true);
-    }
+    // if (boxes.length > 0) {
+    //     let p = pointer_target.position;
+    //     boxes[0].r.setNextKinematicTranslation({x: p.x, y: p.y, z: p.z}, true);
+    //     let q = pointer_target.quaternion;
+    //     boxes[0].r.setNextKinematicRotation({w: q.w, x: q.x, y: q.y, z: q.z}, true);
+    // }
 
     for (let i = 0; i < boxes.length; i++) {
         let p = boxes[i].r.translation();
@@ -118,7 +96,7 @@ function render() {
         boxes[i].m.quaternion.set(q.x, q.y, q.z, q.w);
     }
 
-    world.step(eventQueue);
+    // world.step(eventQueue);
 
     renderer.render(scene, camera);
 }
@@ -146,8 +124,10 @@ function scene_setup() {
 
     scene = new THREE.Scene();
 	scene.background = new THREE.Color(0x999999);
-    camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 100);
-    camera.position.set(0, 1.5, 2.2);
+    camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 1000);
+    camera.position.set(50.0, 50.0, 50.0);
+    camera.lookAt(5.0, 5.0, 5.0);
+
     scene.add(camera);
 
     scene.add(new THREE.AmbientLight(0xf0f0f0));
@@ -162,10 +142,10 @@ function scene_setup() {
     light.shadow.mapSize.height = 1024;
     scene.add(light);
 
-    const helper = new THREE.GridHelper(20, 20);
+    const helper = new THREE.GridHelper(200, 200);
     helper.material.opacity = 0.25;
     helper.material.transparent = true;
-    scene.add( helper );
+    scene.add(helper);
 
     controls = new OrbitControls(camera, renderer.domElement);
     controls.damping = 0.2;
@@ -174,3 +154,12 @@ function scene_setup() {
     const axesHelper = new THREE.AxesHelper(1);
     scene.add(axesHelper);
 }
+
+window.addEventListener('keydown', function(event) {
+
+    switch (event.code) {
+        case "KeyZ":
+            world.step(eventQueue);
+            break;
+    }
+});
